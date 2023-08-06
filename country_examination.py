@@ -12,6 +12,22 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 #pd.set_option('display.max_rows',None)
 pd.set_option('display.max_columns',None)
 
+def adjustFeatures(value):
+    if(pd.notna(value)):
+        if(type(value)!=str):
+            value=str(value)
+            value = value.replace('$','')
+            value = value.replace('%','')
+            value = value.replace(',','')
+            value = float(value)
+        else:
+            value = value.replace('$','')
+            value = value.replace('%','')
+            value = value.replace(',','')
+            value = float(value)            
+            
+        
+        
 countryData = pd.read_csv('C:/Users/ZBOOK 15 G5/Desktop/country_information.csv')
 countryIndexedData = countryData.set_index('Country')
 print(countryData.shape)
@@ -21,10 +37,7 @@ print(countryData.dtypes)
 nonNumericFeatures=['Country','Abbreviation','Capital/Major City','Currency-Code','Largest city','Official language']
 for feature in countryData.columns:
     if(feature not in nonNumericFeatures):
-        countryData[feature] = countryData[feature].str.replace('$','')
-        countryData[feature] = countryData[feature].str.replace('%','')
-        countryData[feature] = countryData[feature].str.replace(',','')
-        countryData[feature] = countryData[feature].astype(float)
+        countryData[feature] = countryData[feature].apply(adjustFeatures)
     
      
 #print(countryData)
