@@ -7,6 +7,10 @@ Created on Wed Jul 19 20:59:07 2023
 import warnings
 import numpy as np
 import pandas as pd
+import sklearn.mixture as gaussianMixture
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+from sklearn.impute import KNNImputer 
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 #pd.set_option('display.max_rows',None)
@@ -34,6 +38,7 @@ print(countryData.shape)
 #there are 195 entries, 35 features
 print(countryData.dtypes)
 
+#Features are cleaned of percentages, dollar signs and commas
 nonNumericFeatures=['Country','Abbreviation','Capital/Major City','Currency-Code','Largest city','Official language']
 for feature in countryData.columns:
     if(feature not in nonNumericFeatures):
@@ -44,17 +49,30 @@ for feature in countryData.columns:
 #   countryData[feature]=countryData[feature].astype(str).str.extract(pat='(\d+)',expand=False)
 
 #Removing unrelated values/characters within features
-countryData['Gasoline Price'] = countryData['Gasoline Price'].str.replace('$','').astype(float)
-countryData['Minimum wage'] = countryData['Minimum wage'].str.replace('$','').astype(float)
-countryData['Tax revenue (%)'] = countryData['Tax revenue (%)'].str.replace('%','').astype(float)
 
-nullCounts = countryData.isna().sum()
+#Finding the features that lack more than 10% of their data    
+#nullCounts = countryData.isna().sum()
 #print(nullCounts[nullCounts > countryData.shape[0]*0.1])
-#The missing data threshold is taken as 10%
-
 lacking_features=countryData[['Armed Forces size','Gasoline Price','Minimum wage','Tax revenue (%)']]
-#print(lacking_features.dtypes)
-#print(lacking_features.tail())
+non_missing_columns = [col for col in countryData.columns if col not in lacking_features.columns]
+#print(non_missing_columns)
+
+#
+#IMPUTATION STEPS START HERE FOR THE LACKING FEATURES
+#
+lackingFeatureValues = lacking_features.values
+nonLackingFeatureValues = countryData.dropna(subset=lacking_features.columns)[countryData.columns].values
+knnImputer=KNNImputer(n_neighbors = 5)
+knn_imputed_features=knnImputer.fit_transform(lackingFeatureValues)
+
+imputer = IterativeImputer(max_iter=10, random_state=0)
+imputer.fit(nonLackingFeatureValues)
+
+imputedFeatures = imputer.transform(knn_imputed_features)
+imputedFeatures = pd.DataFrame(imputedFeatures, columns=lacking_features.columns)
+print(imputedFeatures)
+
+
 #print(lacking_features.describe(include='all'))
 
 #print(lacking_features['Gasoline Price'].head())
